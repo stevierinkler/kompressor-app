@@ -128,7 +128,7 @@ function buildPdf(w, wk) {
             const maxW = cDay - 2, maxH = SH - (label === "Unterschrift" ? 1.5 : 4.5);
             const sc = Math.min(maxW / p.width, maxH / p.height);
             const iw = p.width * sc, ih = p.height * sc;
-            doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih);
+            doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih, `sig${d}`);
             if (label !== "Unterschrift") fitTxt(sg.name, x + cDay / 2, y + SH - 2, cDay - 2, { size: 6, color: C.muted, align: "center" });
           } catch { txt(sg.name, x + cDay / 2, y + SH / 2, { size: 7, align: "center" }); }
         } else {
