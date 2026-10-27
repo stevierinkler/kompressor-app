@@ -2,7 +2,7 @@
 
 function buildPdf(w, wk) {
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait" });
+  const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "portrait", compress: true });
   const C = {
     navy: [31, 56, 100], head: [217, 225, 242], limit: [226, 239, 218], band: [242, 242, 242],
     grey: [217, 217, 217], line: [128, 128, 128], blue: [0, 51, 170], text: [20, 20, 20],
@@ -128,7 +128,7 @@ function buildPdf(w, wk) {
             const maxW = cDay - 2, maxH = SH - (label === "Unterschrift" ? 1.5 : 4.5);
             const sc = Math.min(maxW / p.width, maxH / p.height);
             const iw = p.width * sc, ih = p.height * sc;
-            doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih, `sig${d}`);
+            doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih, `sig${d}`, "FAST");
             if (label !== "Unterschrift") fitTxt(sg.name, x + cDay / 2, y + SH - 2, cDay - 2, { size: 6, color: C.muted, align: "center" });
           } catch { txt(sg.name, x + cDay / 2, y + SH / 2, { size: 7, align: "center" }); }
         } else {
