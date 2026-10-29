@@ -106,8 +106,8 @@ function buildPdf(w, wk) {
       });
     }
 
-    // Abzeichnung
-    band("ABZEICHNUNG");
+    // Unterzeichnung
+    band("UNTERZEICHNUNG");
     const rows = comp.type === "HD" ? ["Ausgefüllt durch", "Unterschrift"] : ["Unterschrift / Name"];
     const SH = comp.type === "HD" ? 10 : 13;
     rows.forEach(label => {

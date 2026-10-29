@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.4";
+const APP_VERSION = "1.1.5";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -194,7 +194,7 @@ function viewHome() {
     else if (!dayComplete(w, d) || !daySigned(w, d)) btn = `<button class="btn btn-primary" id="cont">Weitermachen</button>`;
     else btn = `<button class="btn btn-done" id="done">Heute erledigt ✓</button>`;
     const doneCount = COMPRESSORS.filter(c => compStatus(w, d, c) === "done").length;
-    main = btn + `<div class="hint">${doneCount} von ${COMPRESSORS.length} Kompressoren erfasst${daySigned(w, d) ? " · abgezeichnet" : ""}</div>`;
+    main = btn + `<div class="hint">${doneCount} von ${COMPRESSORS.length} Kompressoren erfasst${daySigned(w, d) ? " · unterzeichnet" : ""}</div>`;
   }
 
   app.innerHTML = topbar("Kompressor-Kontrolle", null, "",
@@ -241,11 +241,11 @@ function statusGrid(w, wk) {
     }
     h += "</tr>";
   }
-  h += `<tr><th class="rowhead small">Abz.</th>`;
+  h += `<tr><th class="rowhead small">Unterz.</th>`;
   for (let i = 0; i < 5; i++) {
     const fut = isFuture(wk, i);
     const st = fut ? "future" : daySigned(w, i) ? "done" : "open";
-    h += `<td><button class="cell st-${st}" data-sign="${i}" ${fut ? "disabled" : ""} aria-label="Abzeichnung ${DAYS_LONG[i]}">${st === "done" ? "✓" : ""}</button></td>`;
+    h += `<td><button class="cell st-${st}" data-sign="${i}" ${fut ? "disabled" : ""} aria-label="Unterzeichnung ${DAYS_LONG[i]}">${st === "done" ? "✓" : ""}</button></td>`;
   }
   h += `</tr></table><div class="legend"><span class="l-done">komplett</span><span class="l-partial">unvollständig</span><span class="l-open">offen</span></div>`;
   return h;
@@ -303,7 +303,7 @@ function viewCapture() {
     `<nav class="chips">${chips}</nav>
     <main>${body}</main>
     <div class="bottombar"><div class="inner">
-      <button class="btn btn-primary" id="next">${next ? `Weiter zu ${next.id} →` : "Weiter zur Abzeichnung →"}</button>
+      <button class="btn btn-primary" id="next">${next ? `Weiter zu ${next.id} →` : "Weiter zur Unterzeichnung →"}</button>
     </div></div>`;
 
   // Eingaben speichern
@@ -383,7 +383,7 @@ function markMissing(miss) {
   }
 }
 
-/* ================= Abzeichnung ================= */
+/* ================= Unterzeichnung ================= */
 function viewSign() {
   const { wk, dayIdx } = state;
   const w = loadWeek(wk);
@@ -392,7 +392,7 @@ function viewSign() {
   let mode = ex.img ? "draw" : (ex.name ? "name" : s.signMode);
   const incomplete = COMPRESSORS.filter(c => compStatus(w, dayIdx, c) !== "done");
 
-  app.innerHTML = topbar("Abzeichnung", `${DAYS_LONG[dayIdx]}, ${fmt(dateOf(wk, dayIdx), true)} · KW ${wk.week}`,
+  app.innerHTML = topbar("Unterzeichnung", `${DAYS_LONG[dayIdx]}, ${fmt(dateOf(wk, dayIdx), true)} · KW ${wk.week}`,
       `<button class="iconbtn" id="back" aria-label="Zurück">${ICON.back}</button>`) + `
     <main>
       ${incomplete.length ? `<div class="card" style="background:var(--warn-bg);color:var(--warn)"><strong>Noch unvollständig:</strong> ${incomplete.map(c => c.id).join(", ")}</div>` : `<div class="card" style="background:var(--ok-bg);color:var(--ok)"><strong>Alle 7 Kompressoren komplett erfasst.</strong></div>`}
@@ -400,7 +400,7 @@ function viewSign() {
         <p class="muted" style="margin-top:0">Gilt für alle Kompressoren an diesem Tag.</p>
         <label class="f" for="name">Ausgefüllt durch</label>
         <input class="txt" id="name" value="${esc(ex.name || s.name || (Object.values(w.sign).find(x => x && x.name) || {}).name || "")}" placeholder="Vor- und Nachname" autocomplete="name">
-        <label class="f">Art der Abzeichnung</label>
+        <label class="f">Art der Unterzeichnung</label>
         <div class="seg" id="mode"><button data-m="name">Name + Datum</button><button data-m="draw">Unterschrift</button></div>
         <div id="drawbox" style="display:none">
           <label class="f">Mit dem Finger unterschreiben</label>
@@ -436,7 +436,7 @@ function viewSign() {
     w.sign[dayIdx] = { name, date: new Date().toISOString(), img: mode === "draw" ? pad.toDataURL() : null };
     saveWeek(w);
     if (!s.name) { s.name = name; saveSettings(s); }
-    toast("Abgezeichnet ✓");
+    toast("Unterzeichnet ✓");
     go("home");
   });
 }
@@ -589,7 +589,7 @@ async function startPdf(wk) {
       const m = missingItems(w, d, c).length;
       if (m) gaps.push({ d, c: c.id, text: `${c.id} – ${DAYS_LONG[d]}: ${m === visibleItems(c, d).length ? "nicht erfasst" : `${m} ${m === 1 ? "Wert fehlt" : "Werte fehlen"}`}` });
     }
-    if (!daySigned(w, d)) gaps.push({ d, sign: true, text: `${DAYS_LONG[d]}: nicht abgezeichnet` });
+    if (!daySigned(w, d)) gaps.push({ d, sign: true, text: `${DAYS_LONG[d]}: nicht unterzeichnet` });
   }
   if (gaps.length) {
     const r = await dialog({
