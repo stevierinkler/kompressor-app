@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.3.1";
+const APP_VERSION = "1.3.2";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");

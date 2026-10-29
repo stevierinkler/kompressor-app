@@ -191,6 +191,7 @@ input.txt:focus { border-color: var(--navy); outline: none; }
 .sigwrap .ph { position: absolute; left: 0; right: 0; bottom: 14px; text-align: center; color: #B7C0CD; font-size: 13px; pointer-events: none; }
 .row { display: flex; gap: 10px; }
 .row > * { flex: 1; }
+.row > .btn + .btn { margin-top: 0; } /* Knöpfe nebeneinander: kein Abstand nach oben, damit sie bündig sind */
 
 .seg { display: flex; background: #EEF1F6; border-radius: 12px; padding: 4px; gap: 4px; }
 .seg button { flex: 1; border: 0; background: transparent; border-radius: 9px; padding: 10px 6px; font-weight: 700; font-size: 14px; color: var(--muted); }
