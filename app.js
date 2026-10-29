@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.2.1";
+const APP_VERSION = "1.3.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -410,7 +410,8 @@ function viewSign() {
     </main>
     <div class="bottombar"><div class="inner"><button class="btn btn-primary" id="save">Tag abschließen ✓</button></div></div>`;
 
-  const pad = setupPad(app.querySelector("#pad"), ex.img);
+  // Hat der Tag schon eine Unterschrift, bleibt sie; sonst die gespeicherte aus den Einstellungen
+  const pad = setupPad(app.querySelector("#pad"), ex.img || s.sig || null);
   pad.resize();
   on("#clear", () => pad.clear());
   on("#back", () => history.back());
@@ -431,10 +432,15 @@ function viewSign() {
   });
 }
 
+// Unterschriftsfeld. "initial" ist eine bereits vorhandene Unterschrift (gespeicherte oder die des Tages).
+// Sie wird angezeigt; sobald man neu zu zeichnen beginnt, wird sie zuerst entfernt –
+// so liegen nie zwei Unterschriften übereinander.
 function setupPad(canvas, initial) {
   const ctx = canvas.getContext("2d");
-  let drawing = false, empty = true, last = null;
+  let drawing = false, empty = !initial, last = null;
   let snapshot = initial || null;
+  let replaceOnDraw = !!initial;
+  function wipe() { ctx.save(); ctx.setTransform(1, 0, 0, 1, 0, 0); ctx.clearRect(0, 0, canvas.width, canvas.height); ctx.restore(); }
   function resize() {
     const r = canvas.getBoundingClientRect();
     if (!r.width) return;
@@ -443,13 +449,24 @@ function setupPad(canvas, initial) {
     ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
     ctx.lineWidth = 3.2; ctx.lineCap = "round"; ctx.lineJoin = "round"; ctx.strokeStyle = "#0B2A6B";
     if (snapshot) {
-      const img = new Image();
-      img.onload = () => { ctx.drawImage(img, 0, 0, r.width, r.height); empty = false; };
-      img.src = snapshot;
+      const src = snapshot, img = new Image();
+      img.onload = () => {
+        if (snapshot !== src) return; // inzwischen gelöscht oder neu gezeichnet
+        // Seitenverhältnis beibehalten, mittig einpassen
+        const sc = Math.min(r.width / img.width, r.height / img.height);
+        const w = img.width * sc, h = img.height * sc;
+        ctx.drawImage(img, (r.width - w) / 2, (r.height - h) / 2, w, h);
+        empty = false;
+      };
+      img.src = src;
     }
   }
   const pos = e => { const r = canvas.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top }; };
-  canvas.addEventListener("pointerdown", e => { drawing = true; last = pos(e); canvas.setPointerCapture(e.pointerId); ctx.beginPath(); ctx.arc(last.x, last.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = "#0B2A6B"; ctx.fill(); empty = false; });
+  canvas.addEventListener("pointerdown", e => {
+    if (replaceOnDraw) { wipe(); snapshot = null; replaceOnDraw = false; }
+    drawing = true; last = pos(e); canvas.setPointerCapture(e.pointerId);
+    ctx.beginPath(); ctx.arc(last.x, last.y, 1.2, 0, Math.PI * 2); ctx.fillStyle = "#0B2A6B"; ctx.fill(); empty = false;
+  });
   canvas.addEventListener("pointermove", e => {
     if (!drawing) return;
     const p = pos(e);
@@ -460,10 +477,11 @@ function setupPad(canvas, initial) {
   canvas.addEventListener("pointerup", end); canvas.addEventListener("pointercancel", end);
   return {
     resize,
-    clear() { ctx.clearRect(0, 0, canvas.width, canvas.height); empty = true; snapshot = null; },
+    clear() { wipe(); empty = true; snapshot = null; replaceOnDraw = false; },
     isEmpty: () => empty,
-    // verkleinert speichern, damit der Gerätespeicher nicht vollläuft
+    // Vorausgefüllte Unterschrift unverändert übernehmen, neu gezeichnete verkleinert speichern
     toDataURL() {
+      if (replaceOnDraw && initial) return initial;
       const W = 400, H = Math.round(W * canvas.height / canvas.width);
       const off = document.createElement("canvas");
       off.width = W; off.height = H;
@@ -516,6 +534,10 @@ function viewSettings() {
         <h2>Unterzeichnung</h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
+        <label class="f">Gespeicherte Unterschrift</label>
+        <div class="sigwrap"><canvas id="pad"></canvas><div class="baseline"></div><div class="ph">hier mit dem Finger unterschreiben</div></div>
+        <p class="muted small" id="sigstate" style="margin:6px 0 0">${s.sig ? "Gespeichert – wird bei der Unterzeichnung automatisch eingesetzt." : "Noch keine Unterschrift gespeichert."}</p>
+        <div class="row mt"><button class="btn btn-secondary" id="sigsave">Speichern</button><button class="btn btn-ghost" id="sigdel">Löschen</button></div>
       </div>
       <div class="card">
         <h2>Datensicherung</h2>
@@ -527,6 +549,20 @@ function viewSettings() {
       <p class="muted center small">Kompressor-Kontrolle v${APP_VERSION} · Daten werden nicht übertragen</p>
     </main>`;
   app.querySelector("#name").addEventListener("input", e => { s.name = e.target.value.trim(); saveSettings(s); });
+  const sigPad = setupPad(app.querySelector("#pad"), s.sig || null);
+  sigPad.resize();
+  const sigState = app.querySelector("#sigstate");
+  on("#sigsave", () => {
+    if (sigPad.isEmpty()) { toast("Bitte zuerst unterschreiben"); return; }
+    s.sig = sigPad.toDataURL(); saveSettings(s);
+    sigState.textContent = "Gespeichert – wird bei der Unterzeichnung automatisch eingesetzt.";
+    toast("Unterschrift gespeichert ✓");
+  });
+  on("#sigdel", () => {
+    sigPad.clear(); delete s.sig; saveSettings(s);
+    sigState.textContent = "Noch keine Unterschrift gespeichert.";
+    toast("Gespeicherte Unterschrift gelöscht");
+  });
   app.querySelectorAll("#theme button").forEach(b => b.addEventListener("click", () => {
     s.theme = b.dataset.t; saveSettings(s); applyTheme();
     app.querySelectorAll("#theme button").forEach(x => x.classList.toggle("on", x === b));
