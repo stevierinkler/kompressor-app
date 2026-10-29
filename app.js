@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.5";
+const APP_VERSION = "1.2.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -56,7 +56,7 @@ const KEY_SETTINGS = "kk.settings";
 const weekKey = wk => `kk.week.${wk.year}-W${String(wk.week).padStart(2, "0")}`;
 
 function loadSettings() {
-  const def = { name: "", signMode: "name", theme: "auto" };
+  const def = { name: "", theme: "auto" };
   try { return Object.assign(def, JSON.parse(localStorage.getItem(KEY_SETTINGS)) || {}); }
   catch { return def; }
 }
@@ -131,7 +131,8 @@ function compStatus(w, dayIdx, comp) {
 }
 function dayStarted(w, dayIdx) { return COMPRESSORS.some(c => compStatus(w, dayIdx, c) !== "open"); }
 function dayComplete(w, dayIdx) { return COMPRESSORS.every(c => compStatus(w, dayIdx, c) === "done"); }
-function daySigned(w, dayIdx) { return !!(w.sign[dayIdx] && w.sign[dayIdx].name); }
+// Ein Tag gilt nur mit Name UND Unterschrift als unterzeichnet
+function daySigned(w, dayIdx) { const s = w.sign[dayIdx]; return !!(s && s.name && s.img); }
 
 /* ================= UI-Helfer ================= */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -389,7 +390,6 @@ function viewSign() {
   const w = loadWeek(wk);
   const s = loadSettings();
   const ex = w.sign[dayIdx] || {};
-  let mode = ex.img ? "draw" : (ex.name ? "name" : s.signMode);
   const incomplete = COMPRESSORS.filter(c => compStatus(w, dayIdx, c) !== "done");
 
   app.innerHTML = topbar("Unterzeichnung", `${DAYS_LONG[dayIdx]}, ${fmt(dateOf(wk, dayIdx), true)} · KW ${wk.week}`,
@@ -400,40 +400,30 @@ function viewSign() {
         <p class="muted" style="margin-top:0">Gilt für alle Kompressoren an diesem Tag.</p>
         <label class="f" for="name">Ausgefüllt durch</label>
         <input class="txt" id="name" value="${esc(ex.name || s.name || (Object.values(w.sign).find(x => x && x.name) || {}).name || "")}" placeholder="Vor- und Nachname" autocomplete="name">
-        <label class="f">Art der Unterzeichnung</label>
-        <div class="seg" id="mode"><button data-m="name">Name + Datum</button><button data-m="draw">Unterschrift</button></div>
-        <div id="drawbox" style="display:none">
-          <label class="f">Mit dem Finger unterschreiben</label>
-          <div class="sigwrap"><canvas id="pad"></canvas><div class="baseline"></div><div class="ph">hier unterschreiben</div></div>
-          <button class="btn btn-ghost mt" id="clear">Unterschrift löschen</button>
-        </div>
+        <label class="f" for="signdate">Datum</label>
+        <input class="txt" id="signdate" value="${fmt(new Date(), true)}" readonly tabindex="-1" aria-readonly="true">
+        <p class="muted small" style="margin:6px 0 0">Wird automatisch eingetragen.</p>
+        <label class="f">Unterschrift</label>
+        <div class="sigwrap"><canvas id="pad"></canvas><div class="baseline"></div><div class="ph">hier mit dem Finger unterschreiben</div></div>
+        <button class="btn btn-ghost mt" id="clear">Unterschrift löschen</button>
       </div>
     </main>
     <div class="bottombar"><div class="inner"><button class="btn btn-primary" id="save">Tag abschließen ✓</button></div></div>`;
 
-  const segBtns = app.querySelectorAll("#mode button");
-  const drawbox = app.querySelector("#drawbox");
   const pad = setupPad(app.querySelector("#pad"), ex.img);
-  const setMode = m => {
-    mode = m;
-    segBtns.forEach(b => b.classList.toggle("on", b.dataset.m === m));
-    drawbox.style.display = m === "draw" ? "" : "none";
-    if (m === "draw") pad.resize();
-  };
-  segBtns.forEach(b => b.addEventListener("click", () => setMode(b.dataset.m)));
-  setMode(mode);
+  pad.resize();
   on("#clear", () => pad.clear());
   on("#back", () => history.back());
   on("#save", async () => {
     const name = app.querySelector("#name").value.trim();
     if (!name) { toast("Bitte Namen eintragen"); app.querySelector("#name").focus(); return; }
-    if (mode === "draw" && pad.isEmpty()) { toast("Bitte unterschreiben oder „Name + Datum“ wählen"); return; }
+    if (pad.isEmpty()) { toast("Bitte unterschreiben"); return; }
     if (incomplete.length) {
       const r = await dialog({ title: "Tag trotz Lücken abschließen?", text: `Unvollständig: ${incomplete.map(c => c.id).join(", ")}. Du kannst später über die Wochenübersicht nachtragen.`,
         buttons: [{ label: "Trotzdem abschließen", cls: "btn-primary", value: "ok" }, { label: "Abbrechen", cls: "btn-ghost", value: null }] });
       if (r !== "ok") return;
     }
-    w.sign[dayIdx] = { name, date: new Date().toISOString(), img: mode === "draw" ? pad.toDataURL() : null };
+    w.sign[dayIdx] = { name, date: new Date().toISOString(), img: pad.toDataURL() };
     saveWeek(w);
     if (!s.name) { s.name = name; saveSettings(s); }
     toast("Unterzeichnet ✓");
@@ -526,9 +516,6 @@ function viewSettings() {
         <h2>Unterzeichnung</h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
-        <label class="f">Standard-Art der Unterzeichnung</label>
-        <div class="seg" id="mode"><button data-m="name" class="${s.signMode === "name" ? "on" : ""}">Name + Datum</button><button data-m="draw" class="${s.signMode === "draw" ? "on" : ""}">Unterschrift</button></div>
-        <p class="muted small">Du kannst bei jeder Unterzeichnung zwischen beiden Arten wechseln.</p>
       </div>
       <div class="card">
         <h2>Datensicherung</h2>
@@ -540,10 +527,6 @@ function viewSettings() {
       <p class="muted center small">Kompressor-Kontrolle v${APP_VERSION} · Daten werden nicht übertragen</p>
     </main>`;
   app.querySelector("#name").addEventListener("input", e => { s.name = e.target.value.trim(); saveSettings(s); });
-  app.querySelectorAll("#mode button").forEach(b => b.addEventListener("click", () => {
-    s.signMode = b.dataset.m; saveSettings(s);
-    app.querySelectorAll("#mode button").forEach(x => x.classList.toggle("on", x === b));
-  }));
   app.querySelectorAll("#theme button").forEach(b => b.addEventListener("click", () => {
     s.theme = b.dataset.t; saveSettings(s); applyTheme();
     app.querySelectorAll("#theme button").forEach(x => x.classList.toggle("on", x === b));

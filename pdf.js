@@ -120,8 +120,11 @@ function buildPdf(w, wk) {
         if (!sg || !sg.name) continue;
         const dateTxt = fmt(new Date(sg.date));
         if (label === "Ausgefüllt durch") {
+          // Name (max. 2 Zeilen) und darunter das Datum der Unterzeichnung
           const lines = doc.setFont("helvetica", "normal").setFontSize(7).splitTextToSize(sg.name, cDay - 2).slice(0, 2);
-          lines.forEach((ln, k) => txt(ln, x + cDay / 2, y + SH / 2 + (k - (lines.length - 1) / 2) * 3, { size: 7, color: C.blue, align: "center" }));
+          const all = [...lines, dateTxt];
+          all.forEach((ln, k) => txt(ln, x + cDay / 2, y + SH / 2 + (k - (all.length - 1) / 2) * 2.8,
+            k < lines.length ? { size: 7, color: C.blue, align: "center" } : { size: 6.5, color: C.muted, align: "center" }));
         } else if (sg.img) {
           try {
             const p = doc.getImageProperties(sg.img);
@@ -129,7 +132,8 @@ function buildPdf(w, wk) {
             const sc = Math.min(maxW / p.width, maxH / p.height);
             const iw = p.width * sc, ih = p.height * sc;
             doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih, `sig${d}`, "FAST");
-            if (label !== "Unterschrift") fitTxt(sg.name, x + cDay / 2, y + SH - 2, cDay - 2, { size: 6, color: C.muted, align: "center" });
+            // ND: eine Zeile für alles – unter der Unterschrift Name und Datum
+            if (label !== "Unterschrift") fitTxt(`${sg.name} · ${dateTxt}`, x + cDay / 2, y + SH - 2, cDay - 2, { size: 6, color: C.muted, align: "center" });
           } catch { txt(sg.name, x + cDay / 2, y + SH / 2, { size: 7, align: "center" }); }
         } else {
           fitTxt(sg.name, x + cDay / 2, y + SH / 2 - 1.6, cDay - 2, { size: 7, color: C.blue, align: "center" });

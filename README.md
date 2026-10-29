@@ -9,7 +9,7 @@ Web-App zur digitalen Erfassung der täglichen Kontrollwerte von Hoch- und Niede
 - Vollständigkeits-Check beim Wechsel zum nächsten Kompressor
 - Kalenderwoche und Datum werden automatisch gesetzt; Betriebsstunden (ND) nur freitags
 - Startseite mit „Erfassung starten“ / „Weitermachen“ / „Heute erledigt“; am Wochenende keine Erfassung
-- Unterzeichnung einmal pro Tag: Name + Datum oder Unterschrift auf dem Display
+- Unterzeichnung einmal pro Tag: Name, automatisches Datum und Pflicht-Unterschrift auf dem Display
 - Wochenübersicht zum Nachtragen, auch für vergangene Wochen
 - Lückenprüfung vor dem Erstellen der PDF
 - Sicherung exportieren / importieren (JSON-Datei)
