@@ -271,3 +271,13 @@ input.txt:focus { border-color: var(--navy); outline: none; }
 /* Unterschriftsfeld bleibt bewusst weiß, damit die Unterschrift in der PDF wie gewohnt aussieht */
 [data-theme="dark"] .sigwrap { border-color: #5E6A7C; }
 [data-theme="dark"] .toast { background: #E6EAF0; color: #0F131A; }
+
+/* ---------- Hilfe-Fragezeichen in Kartenüberschriften ---------- */
+.card h2.h2help { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.helpbtn {
+  flex: none; width: 32px; height: 32px; margin: -6px -4px -6px 0; border-radius: 50%;
+  border: 1.5px solid var(--line); background: transparent; color: var(--muted);
+  font-size: 16px; font-weight: 800; line-height: 1; display: grid; place-items: center;
+  text-transform: none; letter-spacing: 0;
+}
+.helpbtn:active { background: var(--head); color: var(--text); }

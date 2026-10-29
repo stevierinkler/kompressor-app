@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.3.0";
+const APP_VERSION = "1.3.1";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -531,7 +531,7 @@ function viewSettings() {
         <p class="muted small">„Automatisch“ folgt der Einstellung deines Handys. Die PDF bleibt immer hell.</p>
       </div>
       <div class="card">
-        <h2>Unterzeichnung</h2>
+        <h2 class="h2help">Unterzeichnung<button class="helpbtn" id="sighelp" aria-label="Hilfe zur gespeicherten Unterschrift">?</button></h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
         <label class="f">Gespeicherte Unterschrift</label>
@@ -558,6 +558,12 @@ function viewSettings() {
     sigState.textContent = "Gespeichert – wird bei der Unterzeichnung automatisch eingesetzt.";
     toast("Unterschrift gespeichert ✓");
   });
+  on("#sighelp", () => dialog({
+    title: "Gespeicherte Unterschrift",
+    html: `<p>Einmal unterschreiben und „Speichern“ tippen. Bei der Unterzeichnung ist sie vorausgefüllt.</p>
+      <p>Neu zeichnen ersetzt sie für diesen Tag. Bereits unterzeichnete Tage bleiben unverändert.<br>„Löschen“ entfernt die gespeicherte Unterschrift.</p>`,
+    buttons: [{ label: "Verstanden", cls: "btn-primary", value: null }],
+  }));
   on("#sigdel", () => {
     sigPad.clear(); delete s.sig; saveSettings(s);
     sigState.textContent = "Noch keine Unterschrift gespeichert.";
