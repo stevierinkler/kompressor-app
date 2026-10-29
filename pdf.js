@@ -108,8 +108,9 @@ function buildPdf(w, wk) {
 
     // Unterzeichnung
     band("UNTERZEICHNUNG");
-    const rows = comp.type === "HD" ? ["Ausgefüllt durch", "Unterschrift"] : ["Unterschrift / Name"];
-    const SH = comp.type === "HD" ? 10 : 13;
+    // Für HD und ND gleich: oben Name + Datum, darunter nur die Unterschrift
+    const rows = ["Ausgefüllt durch", "Unterschrift"];
+    const SH = 10;
     rows.forEach(label => {
       const leftW = xDay - L;
       box(L, y, leftW, SH); txt(label, L + 2, y + SH / 2, { bold: true });
@@ -126,18 +127,14 @@ function buildPdf(w, wk) {
           all.forEach((ln, k) => txt(ln, x + cDay / 2, y + SH / 2 + (k - (all.length - 1) / 2) * 2.8,
             k < lines.length ? { size: 7, color: C.blue, align: "center" } : { size: 6.5, color: C.muted, align: "center" }));
         } else if (sg.img) {
+          // Zeile „Unterschrift“: nur das Unterschriftsbild (ältere Einträge ohne Unterschrift bleiben leer)
           try {
             const p = doc.getImageProperties(sg.img);
-            const maxW = cDay - 2, maxH = SH - (label === "Unterschrift" ? 1.5 : 4.5);
+            const maxW = cDay - 2, maxH = SH - 1.5;
             const sc = Math.min(maxW / p.width, maxH / p.height);
             const iw = p.width * sc, ih = p.height * sc;
             doc.addImage(sg.img, "PNG", x + (cDay - iw) / 2, y + 0.6, iw, ih, `sig${d}`, "FAST");
-            // ND: eine Zeile für alles – unter der Unterschrift Name und Datum
-            if (label !== "Unterschrift") fitTxt(`${sg.name} · ${dateTxt}`, x + cDay / 2, y + SH - 2, cDay - 2, { size: 6, color: C.muted, align: "center" });
-          } catch { txt(sg.name, x + cDay / 2, y + SH / 2, { size: 7, align: "center" }); }
-        } else {
-          fitTxt(sg.name, x + cDay / 2, y + SH / 2 - 1.6, cDay - 2, { size: 7, color: C.blue, align: "center" });
-          txt(dateTxt, x + cDay / 2, y + SH / 2 + 2, { size: 6.5, color: C.muted, align: "center" });
+          } catch {}
         }
       }
       y += SH;
