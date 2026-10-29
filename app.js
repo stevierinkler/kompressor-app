@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.0";
+const APP_VERSION = "1.1.1";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -527,9 +527,9 @@ function viewSettings() {
         <h2>Abzeichnung</h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
-        <label class="f">Standard-Art der Abzeichnung</label>
+        <label class="f">Standard-Art der Unterzeichnung</label>
         <div class="seg" id="mode"><button data-m="name" class="${s.signMode === "name" ? "on" : ""}">Name + Datum</button><button data-m="draw" class="${s.signMode === "draw" ? "on" : ""}">Unterschrift</button></div>
-        <p class="muted small">Du kannst bei jeder Abzeichnung trotzdem zwischen beiden Arten wechseln.</p>
+        <p class="muted small">Du kannst bei jeder Unterzeichnung zwischen beiden Arten wechseln.</p>
       </div>
       <div class="card">
         <h2>Datensicherung</h2>
