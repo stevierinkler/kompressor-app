@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.2";
+const APP_VERSION = "1.1.3";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -211,7 +211,6 @@ function viewHome() {
       </div>
       <button class="btn btn-secondary" id="week">Wochenübersicht &amp; Nachtragen</button>
       <button class="btn btn-primary" id="pdf">PDF erstellen</button>
-      ${!loadSettings().name ? `<p class="muted center mt">Tipp: Trag in den Einstellungen deinen Namen ein, dann ist er bei der Abzeichnung schon vorausgefüllt.</p>` : ""}
     </main>`;
 
   const d = t.dayIdx;

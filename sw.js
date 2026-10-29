@@ -1,6 +1,6 @@
 // Service Worker: speichert die App auf dem Gerät, damit sie offline läuft.
 // Bei jeder neuen Version CACHE-Namen hochzählen.
-const CACHE = "kompressor-v1.1.2";
+const CACHE = "kompressor-v1.1.3";
 const FILES = [
   "./", "index.html", "style.css", "config.js", "pdf.js", "app.js",
   "vendor/jspdf.umd.min.js", "manifest.webmanifest",
