@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.0.0";
+const APP_VERSION = "1.1.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -56,10 +56,27 @@ const KEY_SETTINGS = "kk.settings";
 const weekKey = wk => `kk.week.${wk.year}-W${String(wk.week).padStart(2, "0")}`;
 
 function loadSettings() {
-  try { return Object.assign({ name: "", signMode: "name" }, JSON.parse(localStorage.getItem(KEY_SETTINGS)) || {}); }
-  catch { return { name: "", signMode: "name" }; }
+  const def = { name: "", signMode: "name", theme: "auto" };
+  try { return Object.assign(def, JSON.parse(localStorage.getItem(KEY_SETTINGS)) || {}); }
+  catch { return def; }
 }
 function saveSettings(s) { localStorage.setItem(KEY_SETTINGS, JSON.stringify(s)); }
+
+/* ================= Farbschema (nur Ansicht, PDF bleibt immer hell) ================= */
+const darkQuery = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+function applyTheme() {
+  const t = loadSettings().theme;
+  const dark = t === "dark" || (t === "auto" && darkQuery && darkQuery.matches);
+  document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+  const meta = document.querySelector('meta[name="theme-color"]');
+  if (meta) meta.setAttribute("content", dark ? "#16223A" : "#1F3864");
+}
+if (darkQuery) {
+  const onChange = () => { if (loadSettings().theme === "auto") applyTheme(); };
+  if (darkQuery.addEventListener) darkQuery.addEventListener("change", onChange);
+  else if (darkQuery.addListener) darkQuery.addListener(onChange);
+}
+applyTheme();
 
 function loadWeek(wk) {
   let w = null;
@@ -502,6 +519,11 @@ function viewSettings() {
   app.innerHTML = topbar("Einstellungen", null, `<button class="iconbtn" id="home" aria-label="Zurück">${ICON.back}</button>`) + `
     <main>
       <div class="card">
+        <h2>Darstellung</h2>
+        <div class="seg" id="theme"><button data-t="auto" class="${s.theme === "auto" ? "on" : ""}">Automatisch</button><button data-t="light" class="${s.theme === "light" ? "on" : ""}">Hell</button><button data-t="dark" class="${s.theme === "dark" ? "on" : ""}">Dunkel</button></div>
+        <p class="muted small">„Automatisch“ folgt der Einstellung deines Handys. Die PDF bleibt immer hell.</p>
+      </div>
+      <div class="card">
         <h2>Abzeichnung</h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
@@ -522,6 +544,10 @@ function viewSettings() {
   app.querySelectorAll("#mode button").forEach(b => b.addEventListener("click", () => {
     s.signMode = b.dataset.m; saveSettings(s);
     app.querySelectorAll("#mode button").forEach(x => x.classList.toggle("on", x === b));
+  }));
+  app.querySelectorAll("#theme button").forEach(b => b.addEventListener("click", () => {
+    s.theme = b.dataset.t; saveSettings(s); applyTheme();
+    app.querySelectorAll("#theme button").forEach(x => x.classList.toggle("on", x === b));
   }));
   on("#home", () => go("home"));
   on("#export", () => {

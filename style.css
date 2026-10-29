@@ -226,3 +226,48 @@ input.txt:focus { border-color: var(--navy); outline: none; }
 .small { font-size: 13px; }
 .mt { margin-top: 12px; }
 .center { text-align: center; }
+
+/* ================= Dark Mode (nur Ansicht – die PDF bleibt immer hell) =================
+   Wird über data-theme="dark" am <html>-Element eingeschaltet (siehe applyTheme in app.js). */
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --navy: #1E3A6E; --navy-2: #27498A;
+  --head: #26324A; --input: #2E2A1C; --limit: #1F3324; --limit-text: #8FD18A;
+  --ok: #6FCF75; --ok-bg: #1C3320; --nok: #FF7B7B; --nok-bg: #3A1D1F;
+  --warn: #F0B34E; --warn-bg: #3A2D16;
+  --bg: #0F131A; --card: #181E28; --text: #E6EAF0; --muted: #98A3B3; --line: #2A3342;
+}
+[data-theme="dark"] .card { box-shadow: 0 0 0 1px var(--line); }
+[data-theme="dark"] .topbar { background: #16223A; }
+[data-theme="dark"] .btn-secondary { background: var(--head); color: #C9D6F2; }
+[data-theme="dark"] .btn-ghost { color: #C9D6F2; border-color: var(--line); }
+[data-theme="dark"] .weekend { color: #C9D6F2; }
+[data-theme="dark"] .st-open { background: #222A37; color: #5E6A7C; }
+[data-theme="dark"] .st-future { border-color: #2A3342; color: #3A4456; }
+[data-theme="dark"] .st-today { box-shadow: inset 0 0 0 2px #7FA2E6; }
+[data-theme="dark"] .legend .l-open::before { background: #222A37; border-color: #5E6A7C; }
+[data-theme="dark"] .weeknav button { background: var(--head); color: #C9D6F2; }
+[data-theme="dark"] .chips { background: var(--bg); border-color: var(--line); }
+[data-theme="dark"] .chip { background: #222A37; color: var(--muted); }
+[data-theme="dark"] .chip.st-done { background: var(--ok-bg); color: var(--ok); }
+[data-theme="dark"] .chip.st-partial { background: var(--warn-bg); color: var(--warn); }
+[data-theme="dark"] .chip.active { background: #3B5FA8; color: #fff; }
+[data-theme="dark"] .section-body { box-shadow: 0 0 0 1px var(--line); }
+[data-theme="dark"] .field .inwrap { border-color: #5A4E26; }
+[data-theme="dark"] .field .inwrap:focus-within { border-color: #7FA2E6; box-shadow: 0 0 0 3px rgba(127,162,230,.25); }
+[data-theme="dark"] .field input { color: #FFE08A; }
+[data-theme="dark"] .field.missing .inwrap { background: var(--warn-bg); border-color: var(--warn); }
+[data-theme="dark"] .checks button { background: #222A37; border-color: var(--line); color: #5E6A7C; }
+[data-theme="dark"] .checks button.on-ok { background: #2E7D32; border-color: #2E7D32; color: #fff; }
+[data-theme="dark"] .checks button.on-nok { background: #C62828; border-color: #C62828; color: #fff; }
+[data-theme="dark"] textarea.notes { border-color: #5A4E26; color: #FFE08A; }
+[data-theme="dark"] .bottombar { background: rgba(15,19,26,.96); }
+[data-theme="dark"] .overlay { background: rgba(0,0,0,.65); }
+[data-theme="dark"] .dialog { background: var(--card); color: var(--text); }
+[data-theme="dark"] input.txt { background: #10151D; border-color: var(--line); color: var(--text); }
+[data-theme="dark"] input.txt:focus { border-color: #7FA2E6; }
+[data-theme="dark"] .seg { background: #10151D; }
+[data-theme="dark"] .seg button.on { background: var(--head); color: #E6EAF0; }
+/* Unterschriftsfeld bleibt bewusst weiß, damit die Unterschrift in der PDF wie gewohnt aussieht */
+[data-theme="dark"] .sigwrap { border-color: #5E6A7C; }
+[data-theme="dark"] .toast { background: #E6EAF0; color: #0F131A; }

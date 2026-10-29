@@ -10,6 +10,14 @@
   <link rel="icon" href="icons/icon-192.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="stylesheet" href="style.css">
+  <script>
+    // Farbschema vor dem ersten Zeichnen setzen, damit die App nicht kurz hell aufblitzt
+    try {
+      var t = (JSON.parse(localStorage.getItem("kk.settings")) || {}).theme || "auto";
+      var dark = t === "dark" || (t === "auto" && window.matchMedia("(prefers-color-scheme: dark)").matches);
+      document.documentElement.setAttribute("data-theme", dark ? "dark" : "light");
+    } catch (e) {}
+  </script>
 </head>
 <body>
   <div id="app"></div>
