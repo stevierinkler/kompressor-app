@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.1";
+const APP_VERSION = "1.1.2";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -524,7 +524,7 @@ function viewSettings() {
         <p class="muted small">„Automatisch“ folgt der Einstellung deines Handys. Die PDF bleibt immer hell.</p>
       </div>
       <div class="card">
-        <h2>Abzeichnung</h2>
+        <h2>Unterzeichnung</h2>
         <label class="f" for="name">Dein Name (wird vorausgefüllt)</label>
         <input class="txt" id="name" value="${esc(s.name)}" placeholder="Vor- und Nachname">
         <label class="f">Standard-Art der Unterzeichnung</label>
