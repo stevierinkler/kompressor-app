@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.1.3";
+const APP_VERSION = "1.1.4";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -624,6 +624,23 @@ if ("scrollRestoration" in history) history.scrollRestoration = "manual";
 history.replaceState({ ...state }, "");
 render();
 if (navigator.storage && navigator.storage.persist) navigator.storage.persist().catch(() => {});
-if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) navigator.serviceWorker.register("sw.js").catch(() => {});
-// Bei Rückkehr in die App (z. B. am nächsten Tag) Startseite aktualisieren
-document.addEventListener("visibilitychange", () => { if (!document.hidden && state.view === "home") render(); });
+let swReg = null;
+if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")) {
+  // Beim Öffnen nach einer neuen Version suchen (ohne Browser-Zwischenspeicher)
+  navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(r => { swReg = r; r.update().catch(() => {}); }).catch(() => {});
+  // Neue Version ist fertig geladen: auf Übersichtsseiten direkt neu laden,
+  // während einer Eingabe nicht stören – dann ist sie beim nächsten Öffnen aktiv.
+  const hadController = !!navigator.serviceWorker.controller;
+  let reloaded = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (!hadController || reloaded) return;
+    if (["home", "week", "settings"].includes(state.view)) { reloaded = true; location.reload(); }
+    else toast("Update geladen – aktiv beim nächsten Öffnen");
+  });
+}
+// Bei Rückkehr in die App (z. B. am nächsten Tag) Startseite aktualisieren und nach Updates schauen
+document.addEventListener("visibilitychange", () => {
+  if (document.hidden) return;
+  if (state.view === "home") render();
+  if (swReg) swReg.update().catch(() => {});
+});

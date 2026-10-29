@@ -29,7 +29,7 @@ Web-App zur digitalen Erfassung der täglichen Kontrollwerte von Hoch- und Niede
 2. Menü (⋮) → **„Zum Startbildschirm hinzufügen“** bzw. **„App installieren“**.
 3. Die App über das neue Symbol starten. Ab jetzt funktioniert sie auch ohne Internet.
 
-Updates werden automatisch geladen, wenn die App mit Internetverbindung geöffnet wird (spätestens beim zweiten Öffnen aktiv). Gespeicherte Werte bleiben dabei erhalten.
+Updates werden automatisch geladen, wenn die App mit Internetverbindung geöffnet wird. Auf der Startseite, der Wochenübersicht und den Einstellungen lädt die App sich danach kurz neu und ist sofort aktuell; während einer Eingabe erscheint nur ein Hinweis, und die neue Version ist beim nächsten Öffnen aktiv. Gespeicherte Werte bleiben dabei erhalten.
 
 ## Messpunkte anpassen
 
