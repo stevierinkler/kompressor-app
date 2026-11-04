@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.5.0";
+const APP_VERSION = "1.6.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -83,7 +83,7 @@ function loadWeek(wk) {
   try { w = JSON.parse(localStorage.getItem(weekKey(wk))); } catch {}
   if (!w) w = { year: wk.year, week: wk.week, values: {}, notes: {}, sign: {} };
   w.values = w.values || {}; w.notes = w.notes || {}; w.sign = w.sign || {};
-  w.times = w.times || {}; w.ack = w.ack || {}; w.rep = w.rep || {};
+  w.ack = w.ack || {}; w.rep = w.rep || {};
   return w;
 }
 function saveWeek(w) {
@@ -140,13 +140,16 @@ function daySigned(w, dayIdx) { const s = w.sign[dayIdx]; return !!(s && s.name 
    Gesamt-/Laststunden (HD) und Lauf-/Lastzeit (ND) werden freitags erfasst.
    Geprüft wird gegen den letzten erfassten Freitag (und beim Nachtragen gegen den nächsten):
    1. nicht kleiner als vorher
-   2. höchstens so viele Stunden mehr, wie zwischen den beiden Eintragungen vergangen sind (+ Puffer)
+   2. Anstieg höchstens 264 h (11 Tage) bei einer Woche Abstand – je fehlender Woche 168 h mehr
+      (Freitag mit Freitag verglichen; deckt Ablesen/Nachtragen bis Dienstag der Folgewoche ab)
    3. Last nicht größer als Gesamt bzw. Lauf
    Die App warnt nur – nach Bestätigung wird der Wert übernommen (Zählertausch, Reset usw.).
    Zusätzlich müssen Zählerwerte zweimal eingegeben werden (gegen Tippfehler); erst wenn beide
    Eingaben übereinstimmen, gilt der Wert als erfasst und wird geprüft und in die PDF übernommen. */
-const COUNTER_BUFFER_H = 24;       // Puffer für unterschiedliche Ablesezeiten und Zeitumstellung
+const COUNTER_WEEK_H = 168;        // Stunden pro Woche
+const COUNTER_BUFFER_H = 96;       // Puffer für spätes Ablesen (Sa–Di): 168 + 96 = 264 h
 const COUNTER_LOOKBACK_WEEKS = 26; // so weit wird nach einem früheren Wert gesucht
+const weeksBetween = (a, b) => Math.round((mondayOf(b.year, b.week) - mondayOf(a.year, a.week)) / (7 * 864e5));
 
 // "1245", "1.245", "1245,5", "1.245,5" -> Zahl; alles andere -> null (dann keine Prüfung)
 function parseNum(v) {
@@ -179,12 +182,6 @@ function counterOk(w, d, compId, id) {
 // Datum des Freitags einer Woche, z. B. "Fr. 30.10."
 const friLabel = wk => `Fr. ${fmt(dateOf(wk, 4))}`;
 
-// Zeitpunkt der Eintragung; ältere Einträge ohne Zeitstempel: Mittag des Tages
-function readingTime(w, wk, d, compId, id) {
-  const t = ((w.times[d] || {})[compId] || {})[id];
-  if (t) return new Date(t);
-  const x = dateOf(wk, d); x.setHours(12, 0, 0, 0); return x;
-}
 // Nächster erfasster Freitagswert davor (dir = -1) oder danach (dir = +1)
 function findReading(wk, compId, id, dir) {
   const cur = today().wk;
@@ -195,7 +192,7 @@ function findReading(wk, compId, id, dir) {
     const w = loadWeek(k);
     if (!counterOk(w, 4, compId, id)) continue;
     const n = parseNum(getVals(w, 4, compId)[id]);
-    if (n != null) return { n, wk: k, time: readingTime(w, k, 4, compId, id) };
+    if (n != null) return { n, wk: k };
   }
   return null;
 }
@@ -211,15 +208,14 @@ function counterInfo(w, wk, dayIdx, comp) {
     if (n == null) continue;
     const problems = [];
     let line;
-    const time = readingTime(w, wk, dayIdx, comp.id, it.id);
     const prev = findReading(wk, comp.id, it.id, -1);
     if (prev) {
       const diff = n - prev.n;
       line = `${diff < 0 ? "−" : "+"}${fmtH(Math.abs(diff))} seit ${friLabel(prev.wk)}`;
       if (diff < 0) problems.push("kleiner als vorher");
       else {
-        const max = Math.max(0, (time - prev.time) / 36e5) + COUNTER_BUFFER_H;
-        if (diff > max) problems.push(`möglich sind max. ca. ${fmtH(Math.round(max))}`);
+        const max = COUNTER_WEEK_H * weeksBetween(prev.wk, wk) + COUNTER_BUFFER_H;
+        if (diff > max) problems.push(`möglich sind max. ${fmtH(max)}`);
       }
     } else line = "Erster Wert – kein Vergleich möglich";
     const nxt = findReading(wk, comp.id, it.id, +1);
@@ -430,9 +426,7 @@ function viewCapture() {
         return;
       }
       if (it && it.counter) {
-        // Erste Eingabe geändert: Zeitpunkt merken, Wiederholung und Bestätigung zurücksetzen
-        const t = nested(w.times, dayIdx, comp.id);
-        if (v.trim()) t[id] = new Date().toISOString(); else delete t[id];
+        // Erste Eingabe geändert: Wiederholung und Bestätigung zurücksetzen
         nested(w.rep, dayIdx, comp.id)[id] = "";
         delete nested(w.ack, dayIdx, comp.id)[id];
         const r = inp.closest(".field").querySelector("input[data-rep]");
