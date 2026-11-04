@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.3.2";
+const APP_VERSION = "1.4.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -83,6 +83,7 @@ function loadWeek(wk) {
   try { w = JSON.parse(localStorage.getItem(weekKey(wk))); } catch {}
   if (!w) w = { year: wk.year, week: wk.week, values: {}, notes: {}, sign: {} };
   w.values = w.values || {}; w.notes = w.notes || {}; w.sign = w.sign || {};
+  w.times = w.times || {}; w.ack = w.ack || {};
   return w;
 }
 function saveWeek(w) {
@@ -133,6 +134,79 @@ function dayStarted(w, dayIdx) { return COMPRESSORS.some(c => compStatus(w, dayI
 function dayComplete(w, dayIdx) { return COMPRESSORS.every(c => compStatus(w, dayIdx, c) === "done"); }
 // Ein Tag gilt nur mit Name UND Unterschrift als unterzeichnet
 function daySigned(w, dayIdx) { const s = w.sign[dayIdx]; return !!(s && s.name && s.img); }
+
+/* ================= Plausibilität Betriebsstunden =================
+   Gesamt-/Laststunden (HD) und Lauf-/Lastzeit (ND) werden freitags erfasst.
+   Geprüft wird gegen den letzten erfassten Freitag (und beim Nachtragen gegen den nächsten):
+   1. nicht kleiner als vorher
+   2. höchstens so viele Stunden mehr, wie zwischen den beiden Eintragungen vergangen sind (+ Puffer)
+   3. Last nicht größer als Gesamt bzw. Lauf
+   Die App warnt nur – nach Bestätigung wird der Wert übernommen (Zählertausch, Reset usw.). */
+const COUNTER_BUFFER_H = 24;       // Puffer für unterschiedliche Ablesezeiten und Zeitumstellung
+const COUNTER_LOOKBACK_WEEKS = 26; // so weit wird nach einem früheren Wert gesucht
+
+// "1245", "1.245", "1245,5", "1.245,5" -> Zahl; alles andere -> null (dann keine Prüfung)
+function parseNum(v) {
+  if (v == null) return null;
+  let s = String(v).replace(/\s/g, "");
+  if (!s) return null;
+  if (s.includes(",")) s = s.replace(/\./g, "").replace(",", ".");
+  else if (/^\d{1,3}(\.\d{3})+$/.test(s)) s = s.replace(/\./g, "");
+  if (!/^-?\d+(\.\d+)?$/.test(s)) return null;
+  return parseFloat(s);
+}
+const fmtH = n => n.toLocaleString("de-DE", { maximumFractionDigits: 1 }) + " h";
+const itemById = (comp, id) => { for (const s of tplOf(comp).sections) for (const it of s.items) if (it.id === id) return it; return null; };
+function nested(obj, d, c) { obj[d] = obj[d] || {}; obj[d][c] = obj[d][c] || {}; return obj[d][c]; }
+
+// Zeitpunkt der Eintragung; ältere Einträge ohne Zeitstempel: Mittag des Tages
+function readingTime(w, wk, d, compId, id) {
+  const t = ((w.times[d] || {})[compId] || {})[id];
+  if (t) return new Date(t);
+  const x = dateOf(wk, d); x.setHours(12, 0, 0, 0); return x;
+}
+// Nächster erfasster Freitagswert davor (dir = -1) oder danach (dir = +1)
+function findReading(wk, compId, id, dir) {
+  const cur = today().wk;
+  for (let i = 1; i <= COUNTER_LOOKBACK_WEEKS; i++) {
+    const k = shiftWeek(wk, dir * i);
+    if (dir > 0 && (k.year > cur.year || (k.year === cur.year && k.week > cur.week))) return null;
+    if (!localStorage.getItem(weekKey(k))) continue;
+    const w = loadWeek(k);
+    const n = parseNum(getVals(w, 4, compId)[id]);
+    if (n != null) return { n, time: readingTime(w, k, 4, compId, id) };
+  }
+  return null;
+}
+// Liefert { id: { text, acked } } für alle unplausiblen Zählerwerte
+function counterIssues(w, wk, dayIdx, comp) {
+  const out = {};
+  const vals = getVals(w, dayIdx, comp.id);
+  const ack = (w.ack[dayIdx] || {})[comp.id] || {};
+  for (const it of visibleItems(comp, dayIdx)) {
+    if (!it.counter) continue;
+    const raw = vals[it.id], n = parseNum(raw);
+    if (n == null) continue;
+    const msgs = [];
+    const time = readingTime(w, wk, dayIdx, comp.id, it.id);
+    const prev = findReading(wk, comp.id, it.id, -1);
+    if (prev) {
+      if (n < prev.n) msgs.push(`Kleiner als letzter Wert (${fmtH(prev.n)} am ${fmt(prev.time)})`);
+      else {
+        const max = Math.max(0, (time - prev.time) / 36e5) + COUNTER_BUFFER_H;
+        if (n - prev.n > max) msgs.push(`+${fmtH(n - prev.n)} seit ${fmt(prev.time)}, möglich sind max. ca. ${fmtH(Math.round(max))}`);
+      }
+    }
+    const nxt = findReading(wk, comp.id, it.id, +1);
+    if (nxt && n > nxt.n) msgs.push(`Größer als späterer Wert (${fmtH(nxt.n)} am ${fmt(nxt.time)})`);
+    if (it.notAbove) {
+      const ref = itemById(comp, it.notAbove), other = parseNum(vals[it.notAbove]);
+      if (ref && other != null && n > other) msgs.push(`Größer als ${ref.label} (${fmtH(other)})`);
+    }
+    if (msgs.length) out[it.id] = { text: msgs.join(" · "), acked: ack[it.id] === raw };
+  }
+  return out;
+}
 
 /* ================= UI-Helfer ================= */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -272,11 +346,14 @@ function viewCapture() {
 
   let nr = 0, body = "";
   for (const s of tpl.sections) {
+    // Nummern zählen über alle Messpunkte, damit sie an jedem Wochentag gleich bleiben
+    const numbers = {};
+    for (const it of s.items) if (s.numbered !== false && it.type !== "check") numbers[it.id] = ++nr;
     const items = s.items.filter(it => !it.fridayOnly || dayIdx === 4);
-    if (!items.length) { if (s.numbered !== false) nr += 0; continue; }
+    if (!items.length) continue;
     body += `<div class="section"><div class="section-title">${esc(s.title)}</div><div class="section-body">`;
     for (const it of items) {
-      const n = s.numbered === false || it.type === "check" ? "" : ++nr;
+      const n = numbers[it.id] || "";
       const v = vals[it.id];
       const ref = tpl.showLimits && it.limit ? `<br><span class="ref">Max/Min ${esc(it.limit)} ${esc(it.unit)}</span>` : "";
       if (it.type === "check") {
@@ -284,7 +361,7 @@ function viewCapture() {
           <div class="checks"><button data-v="ok" class="${v === "ok" ? "on-ok" : ""}" aria-label="in Ordnung">✓</button><button data-v="nok" class="${v === "nok" ? "on-nok" : ""}" aria-label="Mangel">✗</button></div></div>`;
       } else {
         body += `<div class="field" data-id="${it.id}"><span class="nr">${n}</span><span class="lbl">${esc(it.label)}${ref}</span>
-          <div class="inwrap"><input type="text" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(v ?? "")}" aria-label="${esc(it.label)}"><span class="unit">${esc(it.unit)}</span></div></div>`;
+          <div class="inwrap"><input type="text" inputmode="decimal" enterkeyhint="next" autocomplete="off" value="${esc(v ?? "")}" aria-label="${esc(it.label)}"><span class="unit">${esc(it.unit)}</span></div>${it.counter ? `<div class="plaus" hidden></div>` : ""}</div>`;
       }
     }
     body += `</div></div>`;
@@ -314,9 +391,16 @@ function viewCapture() {
     inp.addEventListener("input", () => {
       let v = inp.value.replace(/[^0-9,.\-]/g, "");
       if (v !== inp.value) inp.value = v;
+      const it = itemById(comp, id);
+      if (it && it.counter) {
+        const t = nested(w.times, dayIdx, comp.id), k = nested(w.ack, dayIdx, comp.id);
+        if (v.trim()) t[id] = new Date().toISOString(); else delete t[id];
+        delete k[id];
+      }
       setVal(w, dayIdx, comp.id, id, v.trim());
       inp.closest(".field").classList.remove("missing");
       refreshChips(w, dayIdx);
+      if (it && it.counter) updatePlaus();
     });
     inp.addEventListener("keydown", e => {
       if (e.key === "Enter") {
@@ -346,6 +430,19 @@ function viewCapture() {
     saveWeek(w);
   });
 
+  // Unplausible Zählerwerte rot markieren, Grund unter dem Feld anzeigen
+  function updatePlaus() {
+    const iss = counterIssues(w, wk, dayIdx, comp);
+    app.querySelectorAll(".field .plaus").forEach(el => {
+      const f = el.closest(".field"), x = iss[f.dataset.id];
+      f.classList.toggle("implaus", !!x && !x.acked);
+      f.classList.toggle("implaus-ok", !!x && x.acked);
+      el.hidden = !x;
+      el.textContent = x ? (x.acked ? "Bestätigt: " : "⚠ ") + x.text : "";
+    });
+  }
+  updatePlaus();
+
   const leave = async target => {
     const miss = missingItems(loadWeek(wk), dayIdx, comp);
     if (miss.length) {
@@ -355,6 +452,23 @@ function viewCapture() {
         buttons: [{ label: "Zurück und ergänzen", cls: "btn-primary", value: "back" }, { label: "Trotzdem weiter", cls: "btn-ghost", value: "go" }],
       });
       if (res !== "go") { markMissing(miss); return; }
+    }
+    const open = Object.entries(counterIssues(w, wk, dayIdx, comp)).filter(([, x]) => !x.acked);
+    if (open.length) {
+      const res = await dialog({
+        title: `${comp.id}: Betriebsstunden prüfen`,
+        html: `<ul>${open.map(([id, x]) => `<li><strong>${esc(itemById(comp, id).label)}:</strong> ${esc(x.text)}</li>`).join("")}</ul>
+          <p class="small">Bei Zählertausch oder Reset kann der Wert trotzdem richtig sein.</p>`,
+        buttons: [{ label: "Zurück und prüfen", cls: "btn-primary", value: "back" }, { label: "Werte übernehmen", cls: "btn-ghost", value: "ok" }],
+      });
+      if (res !== "ok") {
+        const f = app.querySelector(`.field[data-id="${open[0][0]}"]`);
+        if (f) { f.scrollIntoView({ behavior: "smooth", block: "center" }); const i = f.querySelector("input"); if (i) setTimeout(() => i.focus(), 350); }
+        return;
+      }
+      const vals = getVals(w, dayIdx, comp.id), k = nested(w.ack, dayIdx, comp.id);
+      for (const [id] of open) k[id] = vals[id];
+      saveWeek(w);
     }
     target();
   };

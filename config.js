@@ -1,6 +1,10 @@
 // Konfiguration: Vorlagen und Kompressoren.
 // Messpunkte hier ergänzen, entfernen oder umbenennen – die App und die PDF passen sich automatisch an.
 // Jeder Messpunkt braucht eine eindeutige "id". Eine id nie wiederverwenden, sonst landen alte Werte im falschen Feld.
+// Zusatzangaben:
+//   fridayOnly: true  -> nur freitags erfassen (Mo–Do grau in der PDF)
+//   counter: true     -> Betriebsstundenzähler: Plausibilitätsprüfung gegen den letzten erfassten Freitag
+//   notAbove: "id"    -> Wert darf nicht größer sein als der Messpunkt mit dieser id (z. B. Last ≤ Gesamt)
 
 const TEMPLATES = {
   HD: {
@@ -17,8 +21,8 @@ const TEMPLATES = {
         { id: "aus_t2",         label: "Austrittstemp. 2. Stufe",   unit: "°C",   limit: "225" },
         { id: "aus_t3",         label: "Austrittstemp. 3. Stufe",   unit: "°C",   limit: "185" },
         { id: "kw_t3",          label: "Kühlwassertemp. 3. Stufe",  unit: "°C",   limit: "70" },
-        { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "" },
-        { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "" },
+        { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "", fridayOnly: true, counter: true },
+        { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "", fridayOnly: true, counter: true, notAbove: "gesamtstd" },
       ]},
       { title: "DRÜCKE", items: [
         { id: "aus_p1",         label: "Austrittsdruck 1. Stufe",   unit: "Bar",  limit: "5,5" },
@@ -54,8 +58,8 @@ const TEMPLATES = {
     hasNotes: false,
     sections: [
       { title: "BETRIEBSSTUNDEN (1 x wöchentlich, Freitag)", numbered: false, items: [
-        { id: "laufzeit",       label: "Laufzeit", unit: "Std.", fridayOnly: true },
-        { id: "lastzeit",       label: "Lastzeit", unit: "Std.", fridayOnly: true },
+        { id: "laufzeit",       label: "Laufzeit", unit: "Std.", fridayOnly: true, counter: true },
+        { id: "lastzeit",       label: "Lastzeit", unit: "Std.", fridayOnly: true, counter: true, notAbove: "laufzeit" },
       ]},
       { title: "DRÜCKE", items: [
         { id: "p_auslass",      label: "Kompressorauslass",  unit: "bar" },

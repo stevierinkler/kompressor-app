@@ -7,7 +7,8 @@ Web-App zur digitalen Erfassung der täglichen Kontrollwerte von Hoch- und Niede
 - Tagesansicht pro Kompressor mit allen Messpunkten, Einheit und (bei HD) Max/Min-Referenzwert
 - Feste Rundgang-Reihenfolge: HD1 → HD2 → HD3 → ND1 → ND2 → ND3 → ND4, freies Wechseln über die Leiste oben
 - Vollständigkeits-Check beim Wechsel zum nächsten Kompressor
-- Kalenderwoche und Datum werden automatisch gesetzt; Betriebsstunden (ND) nur freitags
+- Kalenderwoche und Datum werden automatisch gesetzt; Betriebsstunden (HD und ND) nur freitags
+- Plausibilitätsprüfung der Betriebsstunden: nicht kleiner als beim letzten Freitag, Anstieg höchstens so groß wie die vergangene Zeit (+24 h Puffer), Last nicht größer als Gesamt/Lauf – Warnung mit Bestätigung
 - Startseite mit „Erfassung starten“ / „Weitermachen“ / „Heute erledigt“; am Wochenende keine Erfassung
 - Unterzeichnung einmal pro Tag: Name, automatisches Datum und Pflicht-Unterschrift auf dem Display; Unterschrift kann in den Einstellungen gespeichert und automatisch eingesetzt werden
 - Wochenübersicht zum Nachtragen, auch für vergangene Wochen
