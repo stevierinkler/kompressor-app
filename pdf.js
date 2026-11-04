@@ -97,6 +97,7 @@ function buildPdf(w, wk) {
           const na = it.fridayOnly && d !== 4;
           box(x, y, cDay, RH, na ? C.grey : fill);
           if (na) continue;
+          if (it.counter && !counterOk(w, d, comp.id, it.id)) continue; // Wiederholung fehlt/abweichend
           const v = getVals(w, d, comp.id)[it.id];
           if (v == null || v === "") continue;
           if (it.type === "check") drawCheck(x + cDay / 2, y + RH / 2, v === "ok");

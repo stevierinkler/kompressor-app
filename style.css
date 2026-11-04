@@ -289,3 +289,9 @@ input.txt:focus { border-color: var(--navy); outline: none; }
 .field.implaus .plaus { color: var(--nok); }
 .field.implaus-ok .plaus { color: var(--muted); font-weight: 500; }
 [data-theme="dark"] .field.implaus .inwrap { border-color: var(--nok); background: var(--nok-bg); }
+
+/* ---------- Doppelte Eingabe der Betriebsstunden ---------- */
+.field .lbl.rep { font-size: 13px; font-weight: 600; color: var(--muted); }
+.field.repbad .inwrap { border-color: var(--nok); background: var(--nok-bg); }
+.field.repbad .plaus { color: var(--nok); }
+.field.plaus-info .plaus { color: var(--muted); font-weight: 600; }
