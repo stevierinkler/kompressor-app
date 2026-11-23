@@ -14,6 +14,10 @@ const TEMPLATES = {
     showLimits: true,     // Max/Min-Spalte anzeigen
     hasNotes: true,       // Bemerkungsfeld
     sections: [
+      { title: "BETRIEBSSTUNDEN (1 x wöchentlich, Freitag)", numbered: false, items: [
+        { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "", fridayOnly: true, counter: true },
+        { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "", fridayOnly: true, counter: true, notAbove: "gesamtstd" },
+      ]},
       { title: "DISPLAY", items: [
         { id: "netzdruck",      label: "Netzdruck",                 unit: "Bar",  limit: "42", standbySkip: true },
         { id: "luft_nachk",     label: "Lufttemp. Nachkühler",      unit: "°C",   limit: "35", standbySkip: true },
@@ -22,8 +26,6 @@ const TEMPLATES = {
         { id: "aus_t2",         label: "Austrittstemp. 2. Stufe",   unit: "°C",   limit: "225", standbySkip: true },
         { id: "aus_t3",         label: "Austrittstemp. 3. Stufe",   unit: "°C",   limit: "185", standbySkip: true },
         { id: "kw_t3",          label: "Kühlwassertemp. 3. Stufe",  unit: "°C",   limit: "70", standbySkip: true },
-        { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "", fridayOnly: true, counter: true },
-        { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "", fridayOnly: true, counter: true, notAbove: "gesamtstd" },
       ]},
       { title: "DRÜCKE", items: [
         { id: "aus_p1",         label: "Austrittsdruck 1. Stufe",   unit: "Bar",  limit: "5,5" },
