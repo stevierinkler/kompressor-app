@@ -295,3 +295,8 @@ input.txt:focus { border-color: var(--navy); outline: none; }
 .field.repbad .inwrap { border-color: var(--nok); background: var(--nok-bg); }
 .field.repbad .plaus { color: var(--nok); }
 .field.plaus-info .plaus { color: var(--muted); font-weight: 600; }
+
+/* ---------- Betriebszustand (In Betrieb / Standby / Aus) ---------- */
+.opcard { padding: 14px 16px; }
+.field.skipnote { grid-template-columns: 28px 1fr; }
+.field.skipnote .lbl { font-size: 14px; font-weight: 600; color: var(--muted); font-style: italic; }

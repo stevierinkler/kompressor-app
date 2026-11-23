@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.6.0";
+const APP_VERSION = "1.7.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -83,7 +83,7 @@ function loadWeek(wk) {
   try { w = JSON.parse(localStorage.getItem(weekKey(wk))); } catch {}
   if (!w) w = { year: wk.year, week: wk.week, values: {}, notes: {}, sign: {} };
   w.values = w.values || {}; w.notes = w.notes || {}; w.sign = w.sign || {};
-  w.ack = w.ack || {}; w.rep = w.rep || {};
+  w.ack = w.ack || {}; w.rep = w.rep || {}; w.state = w.state || {};
   return w;
 }
 function saveWeek(w) {
@@ -111,6 +111,15 @@ function visibleItems(comp, dayIdx) {
       if (!it.fridayOnly || dayIdx === 4) out.push(it);
   return out;
 }
+// Betriebszustand pro Kompressor und Tag: "run" (In Betrieb, Standard), "standby" oder "off"
+const OP_LABEL = { run: "In Betrieb", standby: "Standby", off: "Aus" };
+const OP_PDF = { standby: "STANDBY", off: "AUSGESCHALTET" };
+function opState(w, dayIdx, compId) { return ((w.state || {})[dayIdx] || {})[compId] || "run"; }
+// Pflichtfelder: bei Standby/Aus entfallen die Messpunkte mit standbySkip
+function activeItems(w, comp, dayIdx) {
+  const st = opState(w, dayIdx, comp.id);
+  return visibleItems(comp, dayIdx).filter(it => st === "run" || !it.standbySkip);
+}
 function getVals(w, dayIdx, compId) { return (w.values[dayIdx] || {})[compId] || {}; }
 function setVal(w, dayIdx, compId, id, v) {
   w.values[dayIdx] = w.values[dayIdx] || {};
@@ -121,11 +130,11 @@ function setVal(w, dayIdx, compId, id, v) {
 }
 function missingItems(w, dayIdx, comp) {
   const v = getVals(w, dayIdx, comp.id);
-  return visibleItems(comp, dayIdx).filter(it => v[it.id] == null || v[it.id] === "" ||
+  return activeItems(w, comp, dayIdx).filter(it => v[it.id] == null || v[it.id] === "" ||
     (it.counter && !counterOk(w, dayIdx, comp.id, it.id)));
 }
 function compStatus(w, dayIdx, comp) {
-  const total = visibleItems(comp, dayIdx).length;
+  const total = activeItems(w, comp, dayIdx).length;
   const miss = missingItems(w, dayIdx, comp).length;
   if (miss === 0) return "done";
   if (miss === total) return "open";
@@ -366,14 +375,25 @@ function viewCapture() {
   const next = COMPRESSORS[idx + 1];
   const dayLabel = `${DAYS[dayIdx]} ${fmt(dateOf(wk, dayIdx))} · KW ${wk.week}`;
 
-  let nr = 0, body = "";
+  const op = opState(w, dayIdx, comp.id);
+  let nr = 0;
+  let body = `<div class="card opcard"><label class="f" style="margin-top:0">Betriebszustand zum Zeitpunkt der Prüfung</label>
+    <div class="seg" id="opstate">${Object.entries(OP_LABEL).map(([k, l]) => `<button data-s="${k}" class="${op === k ? "on" : ""}">${l}</button>`).join("")}</div>
+    ${op !== "run" ? `<p class="muted small" style="margin:8px 0 0">Ausgeblendete Messpunkte entfallen an diesem Tag.</p>` : ""}</div>`;
   for (const s of tpl.sections) {
     // Nummern zählen über alle Messpunkte, damit sie an jedem Wochentag gleich bleiben
     const numbers = {};
     for (const it of s.items) if (s.numbered !== false && it.type !== "check") numbers[it.id] = ++nr;
-    const items = s.items.filter(it => !it.fridayOnly || dayIdx === 4);
-    if (!items.length) continue;
+    const dayItems = s.items.filter(it => !it.fridayOnly || dayIdx === 4);
+    const skipped = op === "run" ? [] : dayItems.filter(it => it.standbySkip);
+    const items = dayItems.filter(it => !skipped.includes(it));
+    if (!items.length && !skipped.length) continue;
     body += `<div class="section"><div class="section-title">${esc(s.title)}</div><div class="section-body">`;
+    if (skipped.length) {
+      const ns = skipped.map(it => numbers[it.id]).filter(Boolean);
+      const range = ns.length > 1 ? `Punkte ${ns[0]}–${ns[ns.length - 1]}` : `Punkt ${ns[0]}`;
+      body += `<div class="field skipnote"><span class="nr"></span><span class="lbl">${range} entfallen (${OP_LABEL[op]})</span></div>`;
+    }
     for (const it of items) {
       const n = numbers[it.id] || "";
       const v = vals[it.id];
@@ -408,6 +428,16 @@ function viewCapture() {
     <div class="bottombar"><div class="inner">
       <button class="btn btn-primary" id="next">${next ? `Weiter zu ${next.id} →` : "Weiter zur Unterzeichnung →"}</button>
     </div></div>`;
+
+  // Betriebszustand umschalten
+  app.querySelectorAll("#opstate button").forEach(b => b.addEventListener("click", () => {
+    const k = b.dataset.s;
+    if (k === op) return;
+    w.state[dayIdx] = w.state[dayIdx] || {};
+    if (k === "run") delete w.state[dayIdx][comp.id]; else w.state[dayIdx][comp.id] = k;
+    saveWeek(w);
+    render();
+  }));
 
   // Eingaben speichern
   const inputs = [...app.querySelectorAll(".field input")];
@@ -767,7 +797,7 @@ async function startPdf(wk) {
     if (isFuture(wk, d)) continue;
     for (const c of COMPRESSORS) {
       const m = missingItems(w, d, c).length;
-      if (m) gaps.push({ d, c: c.id, text: `${c.id} – ${DAYS_LONG[d]}: ${m === visibleItems(c, d).length ? "nicht erfasst" : `${m} ${m === 1 ? "Wert fehlt" : "Werte fehlen"}`}` });
+      if (m) gaps.push({ d, c: c.id, text: `${c.id} – ${DAYS_LONG[d]}: ${m === activeItems(w, c, d).length ? "nicht erfasst" : `${m} ${m === 1 ? "Wert fehlt" : "Werte fehlen"}`}` });
     }
     if (!daySigned(w, d)) gaps.push({ d, sign: true, text: `${DAYS_LONG[d]}: nicht unterzeichnet` });
   }

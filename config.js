@@ -5,6 +5,7 @@
 //   fridayOnly: true  -> nur freitags erfassen (Mo–Do grau in der PDF)
 //   counter: true     -> Betriebsstundenzähler: Plausibilitätsprüfung gegen den letzten erfassten Freitag
 //   notAbove: "id"    -> Wert darf nicht größer sein als der Messpunkt mit dieser id (z. B. Last ≤ Gesamt)
+//   standbySkip: true -> entfällt, wenn der Kompressor auf „Standby“ oder „Aus“ steht
 
 const TEMPLATES = {
   HD: {
@@ -14,13 +15,13 @@ const TEMPLATES = {
     hasNotes: true,       // Bemerkungsfeld
     sections: [
       { title: "DISPLAY", items: [
-        { id: "netzdruck",      label: "Netzdruck",                 unit: "Bar",  limit: "42" },
-        { id: "luft_nachk",     label: "Lufttemp. Nachkühler",      unit: "°C",   limit: "35" },
-        { id: "oeldruck",       label: "Öldruck",                   unit: "bar",  limit: "1,5" },
-        { id: "aus_t1",         label: "Austrittstemp. 1. Stufe",   unit: "°C",   limit: "230" },
-        { id: "aus_t2",         label: "Austrittstemp. 2. Stufe",   unit: "°C",   limit: "225" },
-        { id: "aus_t3",         label: "Austrittstemp. 3. Stufe",   unit: "°C",   limit: "185" },
-        { id: "kw_t3",          label: "Kühlwassertemp. 3. Stufe",  unit: "°C",   limit: "70" },
+        { id: "netzdruck",      label: "Netzdruck",                 unit: "Bar",  limit: "42", standbySkip: true },
+        { id: "luft_nachk",     label: "Lufttemp. Nachkühler",      unit: "°C",   limit: "35", standbySkip: true },
+        { id: "oeldruck",       label: "Öldruck",                   unit: "bar",  limit: "1,5", standbySkip: true },
+        { id: "aus_t1",         label: "Austrittstemp. 1. Stufe",   unit: "°C",   limit: "230", standbySkip: true },
+        { id: "aus_t2",         label: "Austrittstemp. 2. Stufe",   unit: "°C",   limit: "225", standbySkip: true },
+        { id: "aus_t3",         label: "Austrittstemp. 3. Stufe",   unit: "°C",   limit: "185", standbySkip: true },
+        { id: "kw_t3",          label: "Kühlwassertemp. 3. Stufe",  unit: "°C",   limit: "70", standbySkip: true },
         { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "", fridayOnly: true, counter: true },
         { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "", fridayOnly: true, counter: true, notAbove: "gesamtstd" },
       ]},
@@ -36,8 +37,8 @@ const TEMPLATES = {
         { id: "kessel_t",       label: "Luftkesseltemperatur",          unit: "°C", limit: "45" },
       ]},
       { title: "TROCKNER", items: [
-        { id: "kw_ein",         label: "Kühlwassereintrittstemp.",      unit: "°C", limit: "45" },
-        { id: "kw_aus",         label: "Kühlwasseraustrittstemp.",      unit: "°C", limit: "" },
+        { id: "kw_ein",         label: "Lufteintrittstemp.",            unit: "°C", limit: "45" }, // Trockner luftgekühlt; id bleibt wegen gespeicherter Werte
+        { id: "kw_aus",         label: "Luftaustrittstemp.",            unit: "°C", limit: "" },
         { id: "taupunkt",       label: "Taupunkt Kältetrockner Temp.",  unit: "°C", limit: "8" },
       ]},
       { title: "KONTROLLPUNKTE", check: true, items: [
@@ -55,17 +56,17 @@ const TEMPLATES = {
     title: "KONTROLLE NIEDERDRUCK KOMPRESSOREN",
     subtitle: "UP D 05-3-4",
     showLimits: false,
-    hasNotes: false,
+    hasNotes: true,
     sections: [
       { title: "BETRIEBSSTUNDEN (1 x wöchentlich, Freitag)", numbered: false, items: [
         { id: "laufzeit",       label: "Laufzeit", unit: "Std.", fridayOnly: true, counter: true },
         { id: "lastzeit",       label: "Lastzeit", unit: "Std.", fridayOnly: true, counter: true, notAbove: "laufzeit" },
       ]},
       { title: "DRÜCKE", items: [
-        { id: "p_auslass",      label: "Kompressorauslass",  unit: "bar" },
-        { id: "p_luftfilter",   label: "Luftfilter",         unit: "bar" },
-        { id: "p_oel",          label: "Öldruckkontrolle",   unit: "bar" },
-        { id: "p_zwischen",     label: "Zwischenkühler",     unit: "bar" },
+        { id: "p_auslass",      label: "Kompressorauslass",  unit: "bar", standbySkip: true },
+        { id: "p_luftfilter",   label: "Luftfilter",         unit: "mbar", standbySkip: true }, // Differenzdruck, Minus erlaubt
+        { id: "p_oel",          label: "Öldruckkontrolle",   unit: "bar", standbySkip: true },
+        { id: "p_zwischen",     label: "Zwischenkühler",     unit: "bar", standbySkip: true },
       ]},
       { title: "TEMPERATUREN", items: [
         { id: "t_auslass",      label: "Kompressorauslass",          unit: "°C" },

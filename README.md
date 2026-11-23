@@ -7,6 +7,8 @@ Web-App zur digitalen Erfassung der täglichen Kontrollwerte von Hoch- und Niede
 - Tagesansicht pro Kompressor mit allen Messpunkten, Einheit und (bei HD) Max/Min-Referenzwert
 - Feste Rundgang-Reihenfolge: HD1 → HD2 → HD3 → ND1 → ND2 → ND3 → ND4, freies Wechseln über die Leiste oben
 - Vollständigkeits-Check beim Wechsel zum nächsten Kompressor
+- Betriebszustand pro Kompressor und Tag (In Betrieb / Standby / Aus): bei Standby/Aus entfallen HD-Display 1–7 bzw. ND-Drücke 1–4, in der PDF steht der Zustand senkrecht in der Tagesspalte
+- Bemerkungsfeld bei HD und ND
 - Kalenderwoche und Datum werden automatisch gesetzt; Betriebsstunden (HD und ND) nur freitags
 - Betriebsstunden werden zweimal eingegeben (gegen Tippfehler); danach wird der Anstieg seit dem letzten Freitag angezeigt
 - Plausibilitätsprüfung der Betriebsstunden: nicht kleiner als beim letzten Freitag, Anstieg höchstens 264 h gegenüber dem Vorfreitag (je fehlender Woche +168 h), Last nicht größer als Gesamt/Lauf – Warnung mit Bestätigung

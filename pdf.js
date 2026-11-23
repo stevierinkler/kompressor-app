@@ -33,6 +33,16 @@ function buildPdf(w, wk) {
     while (doc.getTextWidth(String(s)) > maxW && size > 5) { size -= 0.5; doc.setFontSize(size); }
     txt(s, x, y, { ...opt, size });
   }
+  // Senkrechter Schriftzug (von unten nach oben) mittig in einen Bereich einpassen
+  function vText(s, cx, top, h, maxW) {
+    let size = 13;
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(size);
+    while ((doc.getTextWidth(s) > h - 3 || size * 0.3528 * 0.75 > maxW - 3) && size > 5) { size -= 0.5; doc.setFontSize(size); }
+    const tw = doc.getTextWidth(s), capH = size * 0.3528 * 0.7;
+    setText(C.muted);
+    doc.text(s, cx + capH / 2, top + h / 2 + tw / 2, { angle: 90 });
+  }
   function drawCheck(cx, cy, ok) {
     doc.setLineWidth(0.55);
     if (ok) { setDraw(C.ok); doc.line(cx - 1.8, cy, cx - 0.5, cy + 1.4); doc.line(cx - 0.5, cy + 1.4, cx + 2, cy - 1.6); }
@@ -85,6 +95,7 @@ function buildPdf(w, wk) {
     let nr = 0;
     for (const s of tpl.sections) {
       band(s.title + (s.check ? "  (Haken = in Ordnung, Kreuz = Mangel)" : ""));
+      const skipSpan = {}; // pro Tag: Bereich der Zeilen, die bei Standby/Aus entfallen
       s.items.forEach((it, i) => {
         const fill = i % 2 ? C.band : null;
         const n = s.numbered === false || it.type === "check" ? "" : ++nr;
@@ -97,6 +108,12 @@ function buildPdf(w, wk) {
           const na = it.fridayOnly && d !== 4;
           box(x, y, cDay, RH, na ? C.grey : fill);
           if (na) continue;
+          const st = opState(w, d, comp.id);
+          if (it.standbySkip && st !== "run") {
+            const sp = skipSpan[d] || (skipSpan[d] = { top: y, bottom: y, st });
+            sp.bottom = y + RH;
+            continue; // Wert wird bei Standby/Aus nicht gedruckt
+          }
           if (it.counter && !counterOk(w, d, comp.id, it.id)) continue; // Wiederholung fehlt/abweichend
           const v = getVals(w, d, comp.id)[it.id];
           if (v == null || v === "") continue;
@@ -105,6 +122,8 @@ function buildPdf(w, wk) {
         }
         y += RH;
       });
+      for (const [d, sp] of Object.entries(skipSpan))
+        vText(OP_PDF[sp.st], xDay + d * cDay + cDay / 2, sp.top, sp.bottom - sp.top, cDay);
     }
 
     // Unterzeichnung
