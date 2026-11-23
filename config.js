@@ -6,6 +6,7 @@
 //   counter: true     -> Betriebsstundenzähler: Plausibilitätsprüfung gegen den letzten erfassten Freitag
 //   notAbove: "id"    -> Wert darf nicht größer sein als der Messpunkt mit dieser id (z. B. Last ≤ Gesamt)
 //   standbySkip: true -> entfällt, wenn der Kompressor auf „Standby“ oder „Aus“ steht
+// Abschnitt mit stamp: true -> dort steht in der PDF bei Standby/Aus der senkrechte Schriftzug
 
 const TEMPLATES = {
   HD: {
@@ -18,7 +19,7 @@ const TEMPLATES = {
         { id: "gesamtstd",      label: "Gesamtstunden",             unit: "Std.", limit: "", fridayOnly: true, counter: true },
         { id: "laststd",        label: "Laststunden",               unit: "Std.", limit: "", fridayOnly: true, counter: true, notAbove: "gesamtstd" },
       ]},
-      { title: "DISPLAY", items: [
+      { title: "DISPLAY", stamp: true, items: [
         { id: "netzdruck",      label: "Netzdruck",                 unit: "Bar",  limit: "42", standbySkip: true },
         { id: "luft_nachk",     label: "Lufttemp. Nachkühler",      unit: "°C",   limit: "35", standbySkip: true },
         { id: "oeldruck",       label: "Öldruck",                   unit: "bar",  limit: "1,5", standbySkip: true },
@@ -64,7 +65,7 @@ const TEMPLATES = {
         { id: "laufzeit",       label: "Laufzeit", unit: "Std.", fridayOnly: true, counter: true },
         { id: "lastzeit",       label: "Lastzeit", unit: "Std.", fridayOnly: true, counter: true, notAbove: "laufzeit" },
       ]},
-      { title: "DRÜCKE", items: [
+      { title: "DRÜCKE", stamp: true, items: [
         { id: "p_auslass",      label: "Kompressorauslass",  unit: "bar", standbySkip: true },
         { id: "p_luftfilter",   label: "Luftfilter",         unit: "mbar", standbySkip: true }, // Differenzdruck, Minus erlaubt
         { id: "p_oel",          label: "Öldruckkontrolle",   unit: "bar", standbySkip: true },

@@ -35,7 +35,7 @@ function buildPdf(w, wk) {
   }
   // Senkrechter Schriftzug (von unten nach oben) mittig in einen Bereich einpassen
   function vText(s, cx, top, h, maxW) {
-    let size = 16;
+    let size = 13;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(size);
     while ((doc.getTextWidth(s) > h - 3 || size * 0.3528 * 0.75 > maxW - 3) && size > 5) { size -= 0.5; doc.setFontSize(size); }
@@ -93,7 +93,7 @@ function buildPdf(w, wk) {
 
     // Messwerte
     let nr = 0;
-    const skipSpan = {}; // pro Tag: Bereich aller Zeilen, die bei Standby/Aus entfallen (über Abschnitte hinweg)
+    const skipSpan = {}; // pro Tag: Bereich des Abschnitts mit stamp, in dem der Schriftzug steht
     for (const s of tpl.sections) {
       band(s.title + (s.check ? "  (Haken = in Ordnung, Kreuz = Mangel)" : ""));
       s.items.forEach((it, i) => {
@@ -110,8 +110,10 @@ function buildPdf(w, wk) {
           if (na) continue;
           const st = opState(w, d, comp.id);
           if (it.standbySkip && st !== "run") {
-            const sp = skipSpan[d] || (skipSpan[d] = { top: y, bottom: y, st });
-            sp.bottom = y + RH;
+            if (s.stamp) { // Schriftzug nur im Abschnitt mit stamp (HD Display, ND Drücke)
+              const sp = skipSpan[d] || (skipSpan[d] = { top: y, bottom: y, st });
+              sp.bottom = y + RH;
+            }
             continue; // Wert wird bei Standby/Aus nicht gedruckt
           }
           if (it.counter && !counterOk(w, d, comp.id, it.id)) continue; // Wiederholung fehlt/abweichend
@@ -123,7 +125,7 @@ function buildPdf(w, wk) {
         y += RH;
       });
     }
-    // Ein durchgehender senkrechter Schriftzug pro Tag über alle entfallenen Abschnitte
+    // Senkrechter Schriftzug pro Tag im Abschnitt mit stamp
     for (const [d, sp] of Object.entries(skipSpan))
       vText(OP_PDF[sp.st], xDay + d * cDay + cDay / 2, sp.top, sp.bottom - sp.top, cDay);
 
