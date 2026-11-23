@@ -12,7 +12,7 @@ const TEMPLATES = {
   HD: {
     title: "TÄGLICHE ÜBERWACHUNGSLISTE",
     subtitle: "Hochdruck-Kompressor",
-    showLimits: true,     // Max/Min-Spalte anzeigen
+    showLimits: false,    // Max/Min-Spalte anzeigen (ausgeblendet, Werte zu ungenau; "limit" bleibt hinterlegt)
     hasNotes: true,       // Bemerkungsfeld
     sections: [
       { title: "BETRIEBSSTUNDEN (1 x wöchentlich, Freitag)", numbered: false, items: [
