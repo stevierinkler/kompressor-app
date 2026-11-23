@@ -35,7 +35,7 @@ function buildPdf(w, wk) {
   }
   // Senkrechter Schriftzug (von unten nach oben) mittig in einen Bereich einpassen
   function vText(s, cx, top, h, maxW) {
-    let size = 13;
+    let size = 16;
     doc.setFont("helvetica", "bold");
     doc.setFontSize(size);
     while ((doc.getTextWidth(s) > h - 3 || size * 0.3528 * 0.75 > maxW - 3) && size > 5) { size -= 0.5; doc.setFontSize(size); }
@@ -93,9 +93,9 @@ function buildPdf(w, wk) {
 
     // Messwerte
     let nr = 0;
+    const skipSpan = {}; // pro Tag: Bereich aller Zeilen, die bei Standby/Aus entfallen (über Abschnitte hinweg)
     for (const s of tpl.sections) {
       band(s.title + (s.check ? "  (Haken = in Ordnung, Kreuz = Mangel)" : ""));
-      const skipSpan = {}; // pro Tag: Bereich der Zeilen, die bei Standby/Aus entfallen
       s.items.forEach((it, i) => {
         const fill = i % 2 ? C.band : null;
         const n = s.numbered === false || it.type === "check" ? "" : ++nr;
@@ -122,9 +122,10 @@ function buildPdf(w, wk) {
         }
         y += RH;
       });
-      for (const [d, sp] of Object.entries(skipSpan))
-        vText(OP_PDF[sp.st], xDay + d * cDay + cDay / 2, sp.top, sp.bottom - sp.top, cDay);
     }
+    // Ein durchgehender senkrechter Schriftzug pro Tag über alle entfallenen Abschnitte
+    for (const [d, sp] of Object.entries(skipSpan))
+      vText(OP_PDF[sp.st], xDay + d * cDay + cDay / 2, sp.top, sp.bottom - sp.top, cDay);
 
     // Unterzeichnung
     band("UNTERZEICHNUNG");

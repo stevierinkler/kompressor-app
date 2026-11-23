@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.7.1";
+const APP_VERSION = "1.8.0";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -365,6 +365,18 @@ function bindGrid(wk) {
 function on(sel, fn) { const el = app.querySelector(sel); if (el) el.addEventListener("click", fn); }
 
 /* ================= Erfassung ================= */
+// Hinweis oben in der Eingabe bei Standby/Aus, z. B. „Punkte 1–17 entfallen. Pflicht bleiben: …“
+function skipText(comp, dayIdx, op) {
+  let nr = 0; const ns = [];
+  for (const s of tplOf(comp).sections)
+    for (const it of s.items) {
+      const n = s.numbered !== false && it.type !== "check" ? ++nr : 0;
+      if (it.standbySkip && n) ns.push(n);
+    }
+  const range = ns.length > 1 ? `Punkte ${ns[0]}–${ns[ns.length - 1]}` : `Punkt ${ns[0]}`;
+  return `${OP_LABEL[op]}: ${range} entfallen. Pflicht bleiben die Kontrollpunkte${dayIdx === 4 ? " und die Betriebsstunden" : ""}.`;
+}
+
 function viewCapture() {
   const { wk, dayIdx } = state;
   const comp = compById(state.compId);
@@ -379,7 +391,7 @@ function viewCapture() {
   let nr = 0;
   let body = `<div class="card opcard"><label class="f" style="margin-top:0">Betriebszustand zum Zeitpunkt der Prüfung</label>
     <div class="seg" id="opstate">${Object.entries(OP_LABEL).map(([k, l]) => `<button data-s="${k}" class="${op === k ? "on" : ""}">${l}</button>`).join("")}</div>
-    ${op !== "run" ? `<p class="muted small" style="margin:8px 0 0">Ausgeblendete Messpunkte entfallen an diesem Tag.</p>` : ""}</div>`;
+    ${op !== "run" ? `<p class="muted small" style="margin:8px 0 0">${skipText(comp, dayIdx, op)}</p>` : ""}</div>`;
   for (const s of tpl.sections) {
     // Nummern zählen über alle Messpunkte, damit sie an jedem Wochentag gleich bleiben
     const numbers = {};
@@ -387,7 +399,7 @@ function viewCapture() {
     const dayItems = s.items.filter(it => !it.fridayOnly || dayIdx === 4);
     const skipped = op === "run" ? [] : dayItems.filter(it => it.standbySkip);
     const items = dayItems.filter(it => !skipped.includes(it));
-    if (!items.length && !skipped.length) continue;
+    if (!items.length) continue; // Abschnitt komplett entfallen (Standby/Aus) – Hinweis steht oben
     body += `<div class="section"><div class="section-title">${esc(s.title)}</div><div class="section-body">`;
     if (skipped.length) {
       const ns = skipped.map(it => numbers[it.id]).filter(Boolean);
