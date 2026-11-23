@@ -10,7 +10,7 @@ Web-App zur digitalen Erfassung der täglichen Kontrollwerte von Hoch- und Niede
 - Betriebszustand pro Kompressor und Tag (In Betrieb / Standby / Aus): bei Standby/Aus entfallen alle Messwerte, Pflicht bleiben Betriebsstunden (freitags) und Kontrollpunkte; Betriebsstunden bei HD und ND als eigener Abschnitt, in der PDF steht der Zustand senkrecht in der Tagesspalte (HD im Display, ND bei den Drücken)
 - Bemerkungsfeld bei HD und ND
 - Kalenderwoche und Datum werden automatisch gesetzt; Betriebsstunden (HD und ND) nur freitags
-- Betriebsstunden werden zweimal eingegeben (gegen Tippfehler); danach wird der Anstieg seit dem letzten Freitag angezeigt
+- Betriebsstunden werden zweimal eingegeben (gegen Tippfehler); weichen beide Eingaben ab, kann die Seite nicht verlassen werden; danach wird der Anstieg seit dem letzten Freitag angezeigt
 - Plausibilitätsprüfung der Betriebsstunden: nicht kleiner als beim letzten Freitag, Anstieg höchstens 264 h gegenüber dem Vorfreitag (je fehlender Woche +168 h), Last nicht größer als Gesamt/Lauf – Warnung mit Bestätigung
 - Startseite mit „Erfassung starten“ / „Weitermachen“ / „Heute erledigt“; am Wochenende keine Erfassung
 - Unterzeichnung einmal pro Tag: Name, automatisches Datum und Pflicht-Unterschrift auf dem Display; Unterschrift kann in den Einstellungen gespeichert und automatisch eingesetzt werden

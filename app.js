@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.8.1";
+const APP_VERSION = "1.8.2";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -526,7 +526,25 @@ function viewCapture() {
   }
   updatePlaus();
 
+  // Betriebsstunden: zwei verschiedene Zahlen eingetragen -> Seite darf nicht verlassen werden
+  // (leere Wiederholung ist erlaubt, dann gilt der Wert als noch nicht erfasst)
+  const blockMismatch = async () => {
+    const vals = getVals(w, dayIdx, comp.id), reps = (w.rep[dayIdx] || {})[comp.id] || {};
+    const bad = activeItems(w, comp, dayIdx).filter(it => it.counter && vals[it.id] && reps[it.id] && !sameNum(vals[it.id], reps[it.id]));
+    if (!bad.length) return false;
+    await dialog({
+      title: "Eingaben stimmen nicht überein",
+      html: `<ul>${bad.map(it => `<li><strong>${esc(it.label)}:</strong> ${esc(vals[it.id])} / ${esc(reps[it.id])}</li>`).join("")}</ul>
+        <p class="small">Bitte den Zähler nochmal ablesen und beide Felder gleich ausfüllen. Wenn du den Wert später eintragen willst, lösche eins der beiden Felder.</p>`,
+      buttons: [{ label: "Zurück und korrigieren", cls: "btn-primary", value: null }],
+    });
+    const f = app.querySelector(`.field[data-id="${bad[0].id}"]`);
+    if (f) { f.scrollIntoView({ behavior: "smooth", block: "center" }); const i = f.querySelector("input[data-rep]"); if (i) setTimeout(() => i.focus(), 350); }
+    return true;
+  };
+
   const leave = async target => {
+    if (await blockMismatch()) return;
     const miss = missingItems(loadWeek(wk), dayIdx, comp);
     if (miss.length) {
       const res = await dialog({
@@ -560,8 +578,8 @@ function viewCapture() {
     leave(() => { state.compId = ch.dataset.c; history.replaceState({ ...state }, ""); render(); });
   }));
   on("#next", () => leave(() => next ? (state.compId = next.id, history.replaceState({ ...state }, ""), render()) : go("sign", { wk, dayIdx })));
-  on("#home", () => go("home"));
-  on("#weekbtn", () => go("week", { wk }));
+  on("#home", async () => { if (!(await blockMismatch())) go("home"); });
+  on("#weekbtn", async () => { if (!(await blockMismatch())) go("week", { wk }); });
 }
 function refreshChips(w, dayIdx) {
   app.querySelectorAll(".chip").forEach(ch => {
