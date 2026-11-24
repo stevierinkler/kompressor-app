@@ -40,9 +40,9 @@ const TEMPLATES = {
         { id: "kessel_t",       label: "Luftkesseltemperatur",          unit: "°C", limit: "45", standbySkip: true },
       ]},
       { title: "TROCKNER", items: [
-        { id: "kw_ein",         label: "Lufteintrittstemp.",            unit: "°C", limit: "45", standbySkip: true }, // Trockner luftgekühlt; id bleibt wegen gespeicherter Werte
-        { id: "kw_aus",         label: "Luftaustrittstemp.",            unit: "°C", limit: "", standbySkip: true },
-        { id: "taupunkt",       label: "Taupunkt Kältetrockner Temp.",  unit: "°C", limit: "8", standbySkip: true },
+        { id: "kw_ein",         label: "Lufteintrittstemp.",            unit: "°C", limit: "45" }, // Trockner luftgekühlt; id bleibt wegen gespeicherter Werte
+        { id: "kw_aus",         label: "Luftaustrittstemp.",            unit: "°C", limit: "" },
+        { id: "taupunkt",       label: "Taupunkt Kältetrockner Temp.",  unit: "°C", limit: "8" },
       ]},
       { title: "KONTROLLPUNKTE", check: true, items: [
         { id: "c_oelfilter",    label: "Ölfilter (regelmässig drehen)", type: "check" },

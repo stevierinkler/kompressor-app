@@ -1,7 +1,7 @@
 /* Kompressor-Kontrolle – digitale Erfassung
    Alle Daten bleiben im Browser-Speicher dieses Geräts (localStorage). */
 
-const APP_VERSION = "1.8.3";
+const APP_VERSION = "1.8.4";
 const DAYS = ["Mo.", "Di.", "Mi.", "Do.", "Fr."];
 const DAYS_LONG = ["Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag"];
 const app = document.getElementById("app");
@@ -374,7 +374,13 @@ function skipText(comp, dayIdx, op) {
       if (it.standbySkip && n) ns.push(n);
     }
   const range = ns.length > 1 ? `Punkte ${ns[0]}–${ns[ns.length - 1]}` : `Punkt ${ns[0]}`;
-  return `${OP_LABEL[op]}: ${range} entfallen. Pflicht bleiben die Kontrollpunkte${dayIdx === 4 ? " und die Betriebsstunden" : ""}.`;
+  // Abschnitte mit Messwerten, die trotz Standby/Aus Pflicht bleiben (z. B. Trockner bei HD)
+  const keep = tplOf(comp).sections
+    .filter(s => !s.check && s.items.some(it => !it.standbySkip && !it.fridayOnly))
+    .map(s => s.title.charAt(0) + s.title.slice(1).toLowerCase());
+  const must = [...keep, "Kontrollpunkte", ...(dayIdx === 4 ? ["Betriebsstunden"] : [])];
+  const list = must.length > 1 ? `${must.slice(0, -1).join(", ")} und ${must[must.length - 1]}` : must[0];
+  return `${OP_LABEL[op]}: ${range} entfallen. Pflicht bleiben ${list}.`;
 }
 
 function viewCapture() {
